@@ -2,58 +2,37 @@ using UnityEngine;
 
 public class EnemyHealth : Health
 {
-    public float recoveryDuration; // Time before returning upright
-    private Rigidbody rb; // Reference to the Rigidbody
-    private Quaternion initialRotation; // Initial rotation when created
-    private bool isRecovering = false; // Tracks if rotation recovery is in progress
+    private Rigidbody rb; // Reference to the Rigidbody component
 
-    private void Start()
+    void Start()
     {
+        // Get the Rigidbody component
         rb = GetComponent<Rigidbody>();
-        rb.useGravity = true;
 
-        // Lock rotation constraints to keep the enemy upright by default
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-
-        // Store the initial upright rotation
-        initialRotation = Quaternion.Euler(0, transform.rotation.eulerAngles.y, 0);
+        if (rb == null)
+        {
+            Debug.LogWarning("Rigidbody component missing on the enemy!");
+        }
     }
 
     public override void TakeDamage(int damage)
     {
-        base.TakeDamage(damage); // Call the base health logic
+        // Reduce health without calling base method to avoid destroying the object
+        health -= damage;
 
-        if (!isRecovering)
+        if (health <= 0)
         {
-            StartCoroutine(RecoverRotation());
+            UnlockRotationEnableGravityAndDisableScripts(); // Custom behavior for enemies
         }
     }
 
-    private System.Collections.IEnumerator RecoverRotation()
+    private void UnlockRotationEnableGravityAndDisableScripts()
     {
-        isRecovering = true;
-
-        // Temporarily unlock all rotation constraints to allow free rotation
-        rb.constraints = RigidbodyConstraints.None;
-
-        // Wait for the recovery duration
-        yield return new WaitForSeconds(recoveryDuration);
-
-        // Forcefully rotate to the initial upright position
-        float elapsedTime = 0f;
-        while (elapsedTime < recoveryDuration)
+        // Unlock rotation on the Rigidbody and enable gravity
+        if (rb != null)
         {
-            transform.rotation = Quaternion.Lerp(transform.rotation, initialRotation, (elapsedTime / recoveryDuration));
-            elapsedTime += Time.deltaTime;
-            yield return null;
+            rb.constraints = RigidbodyConstraints.None; // Unlock all rotation constraints
+            rb.useGravity = true; // Enable gravity
         }
-
-        // Snap to the final upright position to avoid any inaccuracy
-        transform.rotation = initialRotation;
-
-        // Re-lock rotation constraints to keep the enemy upright
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-
-        isRecovering = false;
     }
 }

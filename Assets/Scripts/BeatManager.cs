@@ -6,6 +6,7 @@ public class BeatManager : MonoBehaviour
 {
     public GameObject beatPrefab;                // Prefab of the beat
     public RectTransform canvasRectTransform;    // Reference to the RectTransform of the canvas
+    public Transform ui;
     public float bpm = 50f;                      // Beats per minute
     public float beatSpeed = 100f;               // Speed at which the beat moves (adjust for your game's speed)
 
@@ -41,7 +42,7 @@ public class BeatManager : MonoBehaviour
         Vector3 spawnPosition = new Vector3(canvasWidth / 2, -133, 0f);
 
         GameObject beat = Instantiate(beatPrefab, spawnPosition, Quaternion.identity);
-        beat.transform.SetParent(canvasRectTransform);
+        beat.transform.SetParent(ui);
         beat.transform.localPosition = spawnPosition;
 
         beats.Add(beat);
@@ -170,30 +171,37 @@ public class BeatMovement : MonoBehaviour
     }
 
     void Update()
+{
+    beatRectTransform.anchoredPosition += Vector2.left * speed * Time.deltaTime;
+
+    // Modify the fade-in logic: start fading in from 3/4 of the canvas width
+    if (beatRectTransform.anchoredPosition.x > 0f)
     {
-        beatRectTransform.anchoredPosition += Vector2.left * speed * Time.deltaTime;
-
-        if (beatRectTransform.anchoredPosition.x > 0f)
-        {
-            float fadeInFactor = Mathf.InverseLerp(canvasWidth, 0f, beatRectTransform.anchoredPosition.x);
-            SetAlpha(fadeInFactor);
-        }
-        else
-        {
-            float fadeOutFactor = Mathf.InverseLerp(0f, -canvasWidth, beatRectTransform.anchoredPosition.x);
-            SetAlpha(1 - fadeOutFactor);
-        }
-
-        if (beatRectTransform.anchoredPosition.x < -canvasWidth)
-        {
-            BeatManager beatManager = Object.FindFirstObjectByType<BeatManager>();
-            if (beatManager != null)
-            {
-                beatManager.RemoveBeat(gameObject);
-            }
-            Destroy(gameObject);
-        }
+        // The beat starts fading in at 3/4 of the screen width
+        float fadeInStart = canvasWidth * 0.35f; // 3/4 on the right
+        float fadeInFactor = Mathf.InverseLerp(fadeInStart, 0f, beatRectTransform.anchoredPosition.x);
+        SetAlpha(fadeInFactor);
     }
+    else
+    {
+        // Modify the fade-out logic: start fading out 1/4 of the way from the left edge
+        float fadeOutStart = -canvasWidth * 0.35f; // 1/4 on the left
+        float fadeOutFactor = Mathf.InverseLerp(0f, fadeOutStart, beatRectTransform.anchoredPosition.x);
+        SetAlpha(1 - fadeOutFactor); // Fade out as it moves past the left side
+    }
+
+    // Remove and destroy beat if it goes off-screen
+    if (beatRectTransform.anchoredPosition.x < -canvasWidth)
+    {
+        BeatManager beatManager = Object.FindFirstObjectByType<BeatManager>();
+        if (beatManager != null)
+        {
+            beatManager.RemoveBeat(gameObject);
+        }
+        Destroy(gameObject);
+    }
+}
+
 
     private void SetAlpha(float alpha)
     {
