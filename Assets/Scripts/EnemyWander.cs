@@ -9,7 +9,6 @@ public class EnemyPhase : MonoBehaviour
     public float rotationSpeed = 2f; // Speed to rotate towards the player
     public float rocketCooldown = 3f; // Base time between rocket spawns
     public float rocketCooldownVariance = 1f; // Variance to the cooldown time (± 0.5)
-
     public float rocketSpreadAngle = 5f; // Angle of spread for the rocket's firing direction
 
     private Rigidbody rb;
@@ -18,12 +17,22 @@ public class EnemyPhase : MonoBehaviour
     private float wanderChangeInterval = 5f; // Time to change wander direction
     private float wanderTimer = 0f;
 
+    private Health health; // Reference to the Health script
+    private bool isDead = false; // Tracks whether the enemy is dead
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
+        health = GetComponent<Health>();
+
         if (rb == null)
         {
             Debug.LogError("Rigidbody component is missing from the enemy!");
+        }
+
+        if (health == null)
+        {
+            Debug.LogError("Health component is missing from the enemy!");
         }
 
         // Set an initial random wander direction
@@ -32,6 +41,16 @@ public class EnemyPhase : MonoBehaviour
 
     void FixedUpdate()
     {
+        // Check if the enemy is dead
+        if (health != null && health.health <= 0)
+        {
+            if (!isDead)
+            {
+                Die();
+            }
+            return; // Stop all behaviors if dead
+        }
+
         GameObject player = PlayerController.player; // Get the player GameObject
         rocketTimer += Time.fixedDeltaTime;
         wanderTimer += Time.fixedDeltaTime;
@@ -46,7 +65,7 @@ public class EnemyPhase : MonoBehaviour
             rb.MoveRotation(Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.fixedDeltaTime));
 
             // Shoot rockets at random intervals within the cooldown range
-            if (rocketTimer >= rocketCooldown + Random.Range(-0.5f, 0.5f) && rocketPrefab != null && firePoint != null)
+            if (rocketTimer >= rocketCooldown + Random.Range(-rocketCooldownVariance / 2f, rocketCooldownVariance / 2f) && rocketPrefab != null && firePoint != null)
             {
                 // Instantiate the rocket and set the shooter reference
                 GameObject rocket = Instantiate(rocketPrefab, firePoint.position, firePoint.rotation);
@@ -63,7 +82,7 @@ public class EnemyPhase : MonoBehaviour
                 HomingRigidbody homingRigidbody = rocket.GetComponent<HomingRigidbody>();
                 if (homingRigidbody != null)
                 {
-                    homingRigidbody.shooter = this.gameObject;  // Set the shooter as the enemy object
+                    homingRigidbody.shooter = this.gameObject; // Set the shooter as the enemy object
                 }
 
                 rocketTimer = 0f; // Reset the rocket timer
@@ -110,6 +129,16 @@ public class EnemyPhase : MonoBehaviour
 
         // Apply the spread rotation to the direction
         return spreadRotation * direction;
+    }
+
+    private void Die()
+    {
+        isDead = true;
+
+        // Disable movement and any other behaviors
+        // rb.linearVelocity = Vector3.zero;
+
+        // Optional: Add death effects, such as animations or particle systems
     }
 
     void OnDrawGizmosSelected()

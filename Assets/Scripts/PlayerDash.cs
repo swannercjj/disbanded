@@ -91,30 +91,37 @@ public class PlayerDash : MonoBehaviour
     }
 
     private void StartDash()
+{
+    Vector3 inputDirection = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
+
+    if (inputDirection.magnitude > 0.1f)
     {
-        Vector3 inputDirection = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
-
-        if (inputDirection.magnitude > 0.1f)
-        {
-            dashDirection = transform.TransformDirection(inputDirection.normalized);
-            dashTimeRemaining = dashDuration;
-            isDashing = true;
-            dashCooldownRemaining = dashCooldown;
-
-            if (trailEffect != null)
-            {
-                if (fadeOutCoroutine != null)
-                {
-                    StopCoroutine(fadeOutCoroutine);
-                    fadeOutCoroutine = null;
-                }
-
-                trailEffect.SetActive(true);
-                vfx.SetFloat("Alpha", 1.0f);
-                trailEffectTimeRemaining = trailEffectDuration;
-            }
-        }
+        dashDirection = transform.TransformDirection(inputDirection.normalized);
     }
+    else
+    {
+        // Default to forward direction if no input is provided
+        dashDirection = transform.forward;
+    }
+
+    dashTimeRemaining = dashDuration;
+    isDashing = true;
+    dashCooldownRemaining = dashCooldown;
+
+    if (trailEffect != null)
+    {
+        if (fadeOutCoroutine != null)
+        {
+            StopCoroutine(fadeOutCoroutine);
+            fadeOutCoroutine = null;
+        }
+
+        trailEffect.SetActive(true);
+        vfx.SetFloat("Alpha", 1.0f);
+        trailEffectTimeRemaining = trailEffectDuration;
+    }
+}
+
 
     private void UpdateDash()
     {

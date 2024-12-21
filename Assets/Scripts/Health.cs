@@ -7,9 +7,9 @@ public class Health : MonoBehaviour
     public virtual void TakeDamage(int damage)
     {
         health -= damage;
-        if (health <= 0)
-        {
-            Destroy(gameObject); // Destroy the object if health drops to zero or below
-        }
+        // if (health <= 0)
+        // {
+        //     Destroy(gameObject); // Destroy the object if health drops to zero or below
+        // }
     }
 }

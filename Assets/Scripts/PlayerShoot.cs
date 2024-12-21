@@ -43,7 +43,6 @@ public class PlayerShoot : MonoBehaviour
             }
             else
             {
-                Debug.Log("No beat in the middle. Cannot shoot.");
             }
         }
     }
