@@ -6,13 +6,17 @@ public class BeatManager : MonoBehaviour
 {
     public GameObject beatPrefab;                // Prefab of the beat
     public RectTransform canvasRectTransform;    // Reference to the RectTransform of the canvas
-    public Transform ui;
+    public Transform ui;                         // Parent for spawned beats
     public float bpm = 50f;                      // Beats per minute
     public float beatSpeed = 100f;               // Speed at which the beat moves (adjust for your game's speed)
+    public AudioSource beat_sound;
+
+    public AudioSource musicSource;             // AudioSource for playing the music
 
     private float timeBetweenBeats;              // Time between spawns
     private float timeSinceLastSpawn;            // Timer for next spawn
     private List<GameObject> beats;              // List to keep track of spawned beats
+    private bool isMusicPlaying = false;         // Tracks whether music is currently playing
 
     void Start()
     {
@@ -22,6 +26,12 @@ public class BeatManager : MonoBehaviour
         // Calculate spawn rate based on BPM
         timeBetweenBeats = 60f / bpm;  // 60 seconds / BPM gives time per beat
         timeSinceLastSpawn = timeBetweenBeats;  // Ensure the first beat spawns immediately
+
+        // Set up the music source
+        if (musicSource != null)
+        {
+            musicSource.loop = true; // Loop the music
+        }
     }
 
     void Update()
@@ -48,7 +58,29 @@ public class BeatManager : MonoBehaviour
         beats.Add(beat);
 
         BeatMovement beatMovement = beat.AddComponent<BeatMovement>();
-        beatMovement.Initialize(beatSpeed, canvasWidth);
+        beatMovement.Initialize(beatSpeed, canvasWidth, this, beat_sound); // Pass reference to BeatManager
+    }
+
+    public void StartMusic()
+    {
+        if (!isMusicPlaying && musicSource != null)
+        {
+            musicSource.Play();
+            isMusicPlaying = true;
+        }
+    }
+
+    public bool IsMusicPlaying()
+    {
+        return isMusicPlaying;
+    }
+
+    public void RemoveBeat(GameObject beat)
+    {
+        if (beats.Contains(beat))
+        {
+            beats.Remove(beat);
+        }
     }
 
     public GameObject GetBeatInMiddle(float centerRange = 18f)
@@ -79,15 +111,14 @@ public class BeatManager : MonoBehaviour
         // If no beat in the middle, mark the next beat as used and set color to red
         foreach (GameObject beat in beats)
         {
-
             BeatMovement beatMovement = beat.GetComponent<BeatMovement>();
             RectTransform beatRect = beat.GetComponent<RectTransform>();
             float beatPositionX = beatRect.anchoredPosition.x;
 
-
-            if (beatMovement != null && beatPositionX < 0f) {
+            if (beatMovement != null && beatPositionX < 0f)
+            {
                 beatMovement.IsUsed = true;
-            } 
+            }
             else if (beatMovement != null)
             {
                 beatMovement.IsUsed = true; // Mark this beat as used
@@ -102,7 +133,6 @@ public class BeatManager : MonoBehaviour
     public bool IsBeatColorWhite(GameObject beat)
     {
         Color beatColor = GetBeatColor(beat);
-        // Check if RGB values are all 1 and allow alpha to vary
         return Mathf.Approximately(beatColor.r, 1f) && Mathf.Approximately(beatColor.g, 1f) && Mathf.Approximately(beatColor.b, 1f);
     }
 
@@ -140,15 +170,6 @@ public class BeatManager : MonoBehaviour
             return Color.clear; // Return a default value if no Image component is found
         }
     }
-
-
-    public void RemoveBeat(GameObject beat)
-    {
-        if (beats.Contains(beat))
-        {
-            beats.Remove(beat);
-        }
-    }
 }
 
 public class BeatMovement : MonoBehaviour
@@ -156,6 +177,9 @@ public class BeatMovement : MonoBehaviour
     private float speed;
     private float canvasWidth;
     private RectTransform beatRectTransform;
+    private BeatManager beatManager;
+    private AudioSource beat_sound;
+    private bool beat_triggered;
 
     public bool IsUsed { get; set; } = false; // Tracks whether the beat has been used
 
@@ -164,44 +188,48 @@ public class BeatMovement : MonoBehaviour
         beatRectTransform = GetComponent<RectTransform>();
     }
 
-    public void Initialize(float moveSpeed, float width)
+    public void Initialize(float moveSpeed, float width, BeatManager manager, AudioSource sound)
     {
         speed = moveSpeed;
         canvasWidth = width;
+        beatManager = manager; // Assign reference to BeatManager
+        beat_sound = sound;
     }
 
     void Update()
-{
-    beatRectTransform.anchoredPosition += Vector2.left * speed * Time.deltaTime;
+    {
+        beatRectTransform.anchoredPosition += Vector2.left * speed * Time.deltaTime;
 
-    // Modify the fade-in logic: start fading in from 3/4 of the canvas width
-    if (beatRectTransform.anchoredPosition.x > 0f)
-    {
-        // The beat starts fading in at 3/4 of the screen width
-        float fadeInStart = canvasWidth * 0.35f; // 3/4 on the right
-        float fadeInFactor = Mathf.InverseLerp(fadeInStart, 0f, beatRectTransform.anchoredPosition.x);
-        SetAlpha(fadeInFactor);
-    }
-    else
-    {
-        // Modify the fade-out logic: start fading out 1/4 of the way from the left edge
-        float fadeOutStart = -canvasWidth * 0.35f; // 1/4 on the left
-        float fadeOutFactor = Mathf.InverseLerp(0f, fadeOutStart, beatRectTransform.anchoredPosition.x);
-        SetAlpha(1 - fadeOutFactor); // Fade out as it moves past the left side
-    }
+        // Start music when beat crosses x < 0 and music is not already playing
+        if (beatRectTransform.anchoredPosition.x <= 5 && !beatManager.IsMusicPlaying())
+        {
+            beatManager.StartMusic();
+        } else if (beatRectTransform.anchoredPosition.x <= 5 && !beat_triggered) {
+            beat_triggered = true;
+            beat_sound.Play();
+        }
 
-    // Remove and destroy beat if it goes off-screen
-    if (beatRectTransform.anchoredPosition.x < -canvasWidth)
-    {
-        BeatManager beatManager = Object.FindFirstObjectByType<BeatManager>();
-        if (beatManager != null)
+        // Modify the fade-in logic: start fading in from 3/4 of the canvas width
+        if (beatRectTransform.anchoredPosition.x > 0f)
+        {
+            float fadeInStart = canvasWidth * 0.35f; // 3/4 on the right
+            float fadeInFactor = Mathf.InverseLerp(fadeInStart, 0f, beatRectTransform.anchoredPosition.x);
+            SetAlpha(fadeInFactor);
+        }
+        else
+        {
+            float fadeOutStart = -canvasWidth * 0.35f; // 1/4 on the left
+            float fadeOutFactor = Mathf.InverseLerp(0f, fadeOutStart, beatRectTransform.anchoredPosition.x);
+            SetAlpha(1 - fadeOutFactor); // Fade out as it moves past the left side
+        }
+
+        // Remove and destroy beat if it goes off-screen
+        if (beatRectTransform.anchoredPosition.x < -canvasWidth)
         {
             beatManager.RemoveBeat(gameObject);
+            Destroy(gameObject);
         }
-        Destroy(gameObject);
     }
-}
-
 
     private void SetAlpha(float alpha)
     {

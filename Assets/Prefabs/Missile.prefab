@@ -200,10 +200,10 @@ MonoBehaviour:
   initialStraightDuration: 0.3
   homingDuration: 1
   finalSpeed: 45
-  explosionEffect: {fileID: 3879674998375954283, guid: 9f22b6d6451eb7143adcb3d6ecc47fc6, type: 3}
-  explosionRadius: 10
+  explosionEffect: {fileID: 911777543720715900, guid: ab6cf0cdb964b78479d4c4922ca5a2f9, type: 3}
+  explosionRadius: 5
   explosionForce: 500
-  damageAmount: 50
+  damageAmount: 30
   trailEffect: {fileID: 4624913789577169807}
   trailFadeDuration: 2
 --- !u!2083052967 &4624913789577169807

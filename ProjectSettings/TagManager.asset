@@ -14,8 +14,8 @@ TagManager:
   - Enemy
   - Rocket
   - IgnoreRaycast
-  - 
-  - 
+  - Debris
+  - Player
   - 
   - 
   - 

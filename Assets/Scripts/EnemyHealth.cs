@@ -11,7 +11,6 @@ public class EnemyHealth : Health
 
         if (rb == null)
         {
-            Debug.LogWarning("Rigidbody component missing on the enemy!");
         }
     }
 

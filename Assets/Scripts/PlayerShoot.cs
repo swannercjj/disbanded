@@ -2,13 +2,10 @@ using UnityEngine;
 
 public class PlayerShoot : MonoBehaviour
 {
-    public float shootRange = 100f; // Maximum distance for shooting
-    public float knockbackForce = 5f; // Knockback force applied to hit objects
-    public int damage = 10; // Damage dealt to the object
-    public Camera playerCamera; // The camera used for shooting (assign in the inspector)
-
-    public GameObject impactEffectPrefab; // Assign your Visual Effect prefab in the Inspector
+    public GameObject bulletPrefab; // Prefab for the bullet
+    public Transform firePoint; // The point from which bullets are fired
     public Canvas canvas; // Reference to the Canvas (which contains the BeatManager)
+    public Camera playerCamera; // Reference to the player's camera
 
     private BeatManager beatManager; // Reference to the BeatManager
 
@@ -27,6 +24,11 @@ public class PlayerShoot : MonoBehaviour
         {
             Debug.LogError("Canvas reference is missing.");
         }
+
+        if (playerCamera == null)
+        {
+            Debug.LogError("Player camera is not assigned.");
+        }
     }
 
     void Update()
@@ -41,50 +43,47 @@ public class PlayerShoot : MonoBehaviour
             {
                 Shoot();
             }
-            else
-            {
-            }
         }
     }
 
     void Shoot()
     {
-        // Create a ray from the camera's position in the direction the camera is facing
-        Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        // Check if the ray hits an object within the specified range
-        if (Physics.Raycast(ray, out hit, shootRange))
+        // Ensure the firePoint and bulletPrefab are assigned
+        if (bulletPrefab == null || firePoint == null)
         {
-            // Check if the object hit has a "Health" script
-            Health healthScript = hit.collider.GetComponent<Health>();
-            if (healthScript != null)
-            {
-                // Deal damage to the object
-                healthScript.TakeDamage(damage);
-
-                // Apply knockback to the object's Rigidbody, if it has one
-                Rigidbody rb = hit.collider.GetComponent<Rigidbody>();
-                if (rb != null)
-                {
-                    Vector3 knockbackDirection = (hit.collider.transform.position - transform.position).normalized;
-                    rb.AddForce(knockbackDirection * knockbackForce, ForceMode.Impulse);
-                }
-            }
-
-            // Trigger the impact effect
-            TriggerImpactEffect(hit.point, hit.normal);
+            Debug.LogError("Bullet prefab or fire point is missing.");
+            return;
         }
-    }
 
-    void TriggerImpactEffect(Vector3 position, Vector3 normal)
-    {
-        // Instantiate the impact effect prefab at the hit position
-        if (impactEffectPrefab != null)
+        if (playerCamera == null)
         {
-            GameObject impactEffect = Instantiate(impactEffectPrefab, position, Quaternion.LookRotation(normal));
+            Debug.LogError("Player camera is not set.");
+            return;
+        }
 
-            Destroy(impactEffect, 2f); // Automatically destroy the effect after 2 seconds
+        // Calculate the direction from the firePoint to the mouse position
+        Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out RaycastHit hit))
+        {
+            Vector3 targetDirection = (hit.point - firePoint.position).normalized;
+
+            // Rotate the firePoint to face the target direction
+            Quaternion rotation = Quaternion.LookRotation(targetDirection);
+            firePoint.rotation = rotation;
+
+            // Instantiate the bullet at the firePoint's position and orientation
+            GameObject bullet = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
+
+            // Set the player as the shooter for the bullet
+            StraightProjectile bulletScript = bullet.GetComponent<StraightProjectile>();
+            if (bulletScript != null)
+            {
+                bulletScript.shooter = gameObject; // Use gameObject to refer to the player
+            }
+        }
+        else
+        {
+            Debug.Log("Mouse raycast did not hit any object.");
         }
     }
 }

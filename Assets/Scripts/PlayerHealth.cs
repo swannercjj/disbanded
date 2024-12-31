@@ -33,30 +33,29 @@ public class PlayerHealth : Health
         }
     }
 
-   public override void TakeDamage(int damage)
-{
-    if (isDead) return; // Prevent further actions if already dead
-
-    base.TakeDamage(damage);
-
-    currentHealth -= damage; // Decrease current health
-    currentHealth = Mathf.Clamp(currentHealth, 0, maxHP); // Ensure health doesn't go below 0
-
-    // Update health bar (Image fill amount) over time using a coroutine
-    if (healthBarImage != null)
+    public override void TakeDamage(int damage)
     {
-        // Calculate the target fillAmount based on the current health
-        // Invert the scale so that max health = 0 fillAmount and 0 health = 0.5 fillAmount
-        float targetFillAmount = 0.5f - ((float)currentHealth / maxHP) * 0.5f;
-        StartCoroutine(SmoothHealthBarUpdate(targetFillAmount)); // Start the coroutine to update the health bar
-    }
+        if (isDead) return; // Prevent further actions if already dead
 
-    if (currentHealth <= 0)
-    {
-        Die();
-    }
-}
+        base.TakeDamage(damage);
 
+        currentHealth -= damage; // Decrease current health
+        currentHealth = Mathf.Clamp(currentHealth, 0, maxHP); // Ensure health doesn't go below 0
+
+        // Update health bar (Image fill amount) over time using a coroutine
+        if (healthBarImage != null)
+        {
+            // Calculate the target fillAmount based on the current health
+            // Invert the scale so that max health = 0 fillAmount and 0 health = 0.5 fillAmount
+            float targetFillAmount = 0.5f - ((float)currentHealth / maxHP) * 0.5f;
+            StartCoroutine(SmoothHealthBarUpdate(targetFillAmount)); // Start the coroutine to update the health bar
+        }
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+    }
 
     private IEnumerator SmoothHealthBarUpdate(float targetFillAmount)
     {
@@ -79,50 +78,60 @@ public class PlayerHealth : Health
 
     private void Die()
     {
+        if (isDead) return; // Ensure the death logic only happens once
         isDead = true;
 
-        // Show the game-over screen
+        // Start the death sequence (spread over frames to avoid freezing)
+        StartCoroutine(HandleDeath());
+    }
+
+    private IEnumerator HandleDeath()
+    {
+        // Show the game-over screen immediately
         if (gameOverScreen != null)
         {
             gameOverScreen.SetActive(true);
         }
 
-        // Disable player-related scripts
+        // Disable player-related scripts gradually to avoid freezing
         foreach (var script in scriptsToDisable)
         {
             if (script != null)
             {
                 script.enabled = false;
+                yield return null; // Yield for the next frame
             }
         }
 
-        // Hide the gun and UI object
+        // Hide the gun and UI object right after death
         if (gunPrefab != null)
         {
             gunPrefab.SetActive(false);
+            yield return null; // Yield for the next frame
         }
 
         if (uiObjectToHide != null)
         {
             uiObjectToHide.SetActive(false);
+            yield return null; // Yield for the next frame
         }
 
-        // Detach the camera and zoom it out
+        // Detach the camera and start the zoom-out process
         if (playerCamera != null)
         {
             cameraTransform = playerCamera.transform;
 
-            // Detach the camera from the player
+            // Detach the camera from the player for smooth zooming
             cameraTransform.parent = null;
 
             // Start the zoom-out coroutine
-            StartCoroutine(ZoomOutCamera(cameraTransform));
+            yield return StartCoroutine(ZoomOutCamera(cameraTransform));
         }
     }
 
     private IEnumerator ZoomOutCamera(Transform cameraTransform)
     {
-        // Randomize the direction of the camera zoom out
+        // Randomize the direction of the camera zoom-out
         float randomAngle = Random.Range(-45f, 45f); // Randomize the camera zoom-out angle
 
         // Calculate the target position with randomness in the upward direction

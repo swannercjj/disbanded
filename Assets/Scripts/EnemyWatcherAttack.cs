@@ -24,38 +24,37 @@ public class EnemyWatcherAttack : MonoBehaviour
     private Health healthComponent; // Reference to the health component
 
     void Start()
-{
-    // Instantiate and disable the laser initially
-    currentLaser = Instantiate(cylinderPrefab);
-    currentLaser.SetActive(false);
-
-    // Set the shooter reference for the laser
-    Laser laserScript = currentLaser.GetComponent<Laser>();
-    if (laserScript != null)
     {
-        laserScript.shooter = gameObject; // Set the shooter to this enemy
+        // Instantiate and disable the laser initially
+        currentLaser = Instantiate(cylinderPrefab);
+        currentLaser.SetActive(false);
+
+        // Set the shooter reference for the laser
+        Laser laserScript = currentLaser.GetComponent<Laser>();
+        if (laserScript != null)
+        {
+            laserScript.shooter = gameObject; // Set the shooter to this enemy
+        }
+
+        // Setup LineRenderer
+        lineRenderer = GetComponent<LineRenderer>();
+        if (lineRenderer == null)
+        {
+            lineRenderer = gameObject.AddComponent<LineRenderer>();
+        }
+
+        lineRenderer.startWidth = 0.1f;
+        lineRenderer.endWidth = 0.1f;
+        lineRenderer.positionCount = 2;
+        lineRenderer.material = new Material(Shader.Find("Unlit/Color"));
+        lineRenderer.material.color = Color.red;
+
+        // Get the health component
+        healthComponent = GetComponent<Health>();
+
+        // Spawn the VFX immediately if it's assigned and there is a barrelTransform
+        SpawnVFX();
     }
-
-    // Setup LineRenderer
-    lineRenderer = GetComponent<LineRenderer>();
-    if (lineRenderer == null)
-    {
-        lineRenderer = gameObject.AddComponent<LineRenderer>();
-    }
-
-    lineRenderer.startWidth = 0.1f;
-    lineRenderer.endWidth = 0.1f;
-    lineRenderer.positionCount = 2;
-    lineRenderer.material = new Material(Shader.Find("Unlit/Color"));
-    lineRenderer.material.color = Color.red;
-
-    // Get the health component
-    healthComponent = GetComponent<Health>();
-
-    // Spawn the VFX immediately if it's assigned and there is a barrelTransform
-    SpawnVFX();
-}
-
 
     void Update()
     {
@@ -83,18 +82,11 @@ public class EnemyWatcherAttack : MonoBehaviour
             return;
         }
 
-        // Determine the current rotation speed (halved if the laser is active)
-        float currentRotationSpeed = currentLaser != null && currentLaser.activeSelf
-            ? rotationSpeed / 2f
-            : rotationSpeed;
+        // **Always rotate towards the player**
+        RotateTowardsPlayer();
 
-        // Smoothly rotate to look at the player using the current rotation speed
-        Vector3 directionToPlayer = playerTransform.position - transform.position;
-        Quaternion targetRotation = Quaternion.LookRotation(directionToPlayer);
-        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, currentRotationSpeed * Time.deltaTime);
-
-        // Start attack if not already attacking
-        if (!isAttacking)
+        // Check if the player is in line of sight
+        if (HasLineOfSight() && !isAttacking)
         {
             StartCoroutine(PerformAttack());
         }
@@ -107,6 +99,42 @@ public class EnemyWatcherAttack : MonoBehaviour
 
         // Update LineRenderer to follow the raycast direction
         UpdateLineRenderer();
+    }
+
+    private void RotateTowardsPlayer()
+    {
+        if (playerTransform == null) return;
+
+        // Calculate the direction to the player
+        Vector3 directionToPlayer = playerTransform.position - transform.position;
+
+        // Determine the rotation speed (adjusted if laser is active)
+        float currentRotationSpeed = currentLaser != null && currentLaser.activeSelf
+            ? rotationSpeed / 2f
+            : rotationSpeed;
+
+        // Smoothly rotate towards the player
+        Quaternion targetRotation = Quaternion.LookRotation(directionToPlayer);
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, currentRotationSpeed * Time.deltaTime);
+    }
+
+    private bool HasLineOfSight()
+    {
+        // Perform a raycast from this object's position to the player's position
+        Vector3 directionToPlayer = playerTransform.position - transform.position;
+        Ray ray = new Ray(transform.position, directionToPlayer.normalized);
+        RaycastHit hit;
+
+        // Check if the ray hits the player without being obstructed
+        if (Physics.Raycast(ray, out hit, laserMaxDistance, ~ignoreLayerMask))
+        {
+            if (hit.collider.transform == playerTransform)
+            {
+                return true; // Line of sight to the player
+            }
+        }
+
+        return false; // No line of sight to the player
     }
 
     private IEnumerator PerformAttack()
@@ -147,13 +175,13 @@ public class EnemyWatcherAttack : MonoBehaviour
             {
                 scaleFactor = Mathf.Lerp(laserInitialRadius, laserFullRadius, normalizedTime / 0.25f);
             }
-            else if (0.75 <= normalizedTime && normalizedTime <= 1f) // Remaining time: shrink back to min size
+            else if (0.75 <= normalizedTime && normalizedTime <= 1f) // Last quarter: shrink back to min size
             {
                 scaleFactor = Mathf.Lerp(laserFullRadius, laserInitialRadius, (normalizedTime - 0.75f) / 0.25f);
             }
             else
             {
-                scaleFactor = laserFullRadius; // Safety fallback
+                scaleFactor = laserFullRadius; // Full size
             }
 
             // Add random variation to the scale factor (between 0 and 0.5)
@@ -182,39 +210,31 @@ public class EnemyWatcherAttack : MonoBehaviour
 
     private void SpawnVFX()
     {
-        // Ensure that the VFX prefab and barrel transform are assigned
         if (vfxPrefab != null && barrelTransform != null)
         {
-            // Instantiate the VFX and make it a child of the barrel
             GameObject vfxInstance = Instantiate(vfxPrefab, barrelTransform.position, barrelTransform.rotation);
-            vfxInstance.transform.SetParent(barrelTransform); // Make it a child of the barrel
+            vfxInstance.transform.SetParent(barrelTransform);
         }
     }
 
     private void SpawnAttackVFX()
     {
-        // Ensure that the new attack VFX prefab is assigned and create the VFX at the barrel's position
         if (attackVFXPrefab != null && barrelTransform != null)
         {
-            // Instantiate the attack VFX and make it a child of the barrel
             attackVFXInstance = Instantiate(attackVFXPrefab, barrelTransform.position, barrelTransform.rotation);
-            attackVFXInstance.transform.SetParent(barrelTransform); // Make it a child of the barrel
+            attackVFXInstance.transform.SetParent(barrelTransform);
         }
     }
 
     private IEnumerator SpawnAndDestroyVFX()
     {
-        // Check if the VFX prefab and barrel transform are assigned
         if (vfxPrefab != null && barrelTransform != null)
         {
-            // Instantiate the VFX and make it a child of the barrel
             GameObject vfxInstance = Instantiate(vfxPrefab, barrelTransform.position, barrelTransform.rotation);
-            vfxInstance.transform.SetParent(barrelTransform); // Make it a child of the barrel
+            vfxInstance.transform.SetParent(barrelTransform);
 
-            // Wait for the raycast delay before destroying the VFX
             yield return new WaitForSeconds(raycastDelay);
 
-            // Destroy the VFX after the delay
             Destroy(vfxInstance);
         }
     }
@@ -226,42 +246,32 @@ public class EnemyWatcherAttack : MonoBehaviour
             hitPoint = transform.position + transform.forward * laserMaxDistance;
         }
 
-        // Set the cylinder's position and scale
         Vector3 start = transform.position;
         Vector3 end = hitPoint;
 
         currentLaser.transform.position = (start + end) / 2;
 
-        // Align the cylinder to the ray direction
         Vector3 direction = (end - start).normalized;
         currentLaser.transform.rotation = Quaternion.LookRotation(direction);
-
-        // Rotate the cylinder to align its height (y-axis) with the direction
         currentLaser.transform.Rotate(90, 0, 0);
 
-        // Set the cylinder's scale along the ray's length
         float distance = Vector3.Distance(start, end);
         currentLaser.transform.localScale = new Vector3(currentLaser.transform.localScale.x, distance / 2, currentLaser.transform.localScale.z);
     }
 
     private void UpdateLineRenderer()
     {
-        // Perform a raycast in the forward direction
         Ray ray = new Ray(transform.position, transform.forward);
         RaycastHit hit;
 
-        // Set the start point of the LineRenderer
         lineRenderer.SetPosition(0, ray.origin);
 
-        // Check if the ray hits anything
         if (Physics.Raycast(ray, out hit, laserMaxDistance, ~ignoreLayerMask))
         {
-            // Set the endpoint of the LineRenderer to the hit point
             lineRenderer.SetPosition(1, hit.point);
         }
         else
         {
-            // Set the endpoint of the LineRenderer to the maximum distance
             lineRenderer.SetPosition(1, ray.origin + ray.direction * laserMaxDistance);
         }
     }

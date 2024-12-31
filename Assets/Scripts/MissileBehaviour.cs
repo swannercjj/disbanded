@@ -1,6 +1,7 @@
 using UnityEngine;
+using System.Collections.Generic;
 using UnityEngine.VFX;
-using System.Collections.Generic; // For using HashSet
+
 
 public class HomingRigidbody : MonoBehaviour
 {
@@ -20,6 +21,7 @@ public class HomingRigidbody : MonoBehaviour
     private Rigidbody rb;
     private float elapsedTime = 0f;
     private bool hasExploded = false; // Flag to track if the missile has exploded
+    private HashSet<GameObject> affectedObjects = new HashSet<GameObject>(); // To track which GameObjects have been affected
 
     void Start()
     {
@@ -98,30 +100,30 @@ public class HomingRigidbody : MonoBehaviour
         Collider[] colliders = Physics.OverlapSphere(transform.position, explosionRadius);
 
         // HashSet to track affected objects (avoid multiple triggers)
-        HashSet<Collider> affectedObjects = new HashSet<Collider>();
-
         foreach (Collider nearbyObject in colliders)
         {
-            // If the object has not been affected already, process it
-            if (!affectedObjects.Contains(nearbyObject))
+            // Skip if the object has already been affected
+            if (affectedObjects.Contains(nearbyObject.gameObject))
             {
-                affectedObjects.Add(nearbyObject);
+                continue;
+            }
 
-                // Check if the object has a Health component
-                Health health = nearbyObject.GetComponent<Health>();
-                if (health != null)
-                {
-                    // Only apply damage if the object has a Health component
-                    health.TakeDamage(damageAmount);
-                }
+            affectedObjects.Add(nearbyObject.gameObject); // Add the object to the affected set
 
-                // Apply explosion force if the object has a Rigidbody
-                Rigidbody nearbyRb = nearbyObject.GetComponent<Rigidbody>();
-                if (nearbyRb != null)
-                {
-                    Vector3 direction = nearbyRb.transform.position - transform.position;
-                    nearbyRb.AddExplosionForce(explosionForce, transform.position, explosionRadius);
-                }
+            // Check if the object has a Health component
+            Health health = nearbyObject.GetComponent<Health>();
+            if (health != null)
+            {
+                // Only apply damage if the object has a Health component
+                health.TakeDamage(damageAmount);
+            }
+
+            // Apply explosion force if the object has a Rigidbody
+            Rigidbody nearbyRb = nearbyObject.GetComponent<Rigidbody>();
+            if (nearbyRb != null)
+            {
+                Vector3 direction = nearbyRb.transform.position - transform.position;
+                nearbyRb.AddExplosionForce(explosionForce, transform.position, explosionRadius);
             }
         }
     }
