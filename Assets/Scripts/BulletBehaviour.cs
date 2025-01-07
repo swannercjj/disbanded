@@ -94,20 +94,39 @@ public class StraightProjectile : MonoBehaviour
             continue;
         }
 
-        if (affectedObjects.Contains(nearbyObject.gameObject))
+        // Find the closest Health component in the object or its ancestors
+        Transform currentTransform = nearbyObject.transform;
+        Health health = null;
+
+        while (currentTransform != null)
+        {
+            health = currentTransform.GetComponent<Health>();
+            if (health != null)
+            {
+                break; // Stop searching once a Health component is found
+            }
+            currentTransform = currentTransform.parent;
+        }
+
+        // Skip if no Health component is found
+        if (health == null)
         {
             continue;
         }
 
-        affectedObjects.Add(nearbyObject.gameObject);
-
-        // Apply damage if the object has a Health component
-        Health health = nearbyObject.GetComponent<Health>();
-        if (health != null)
+        // Skip if the health object has already been processed
+        if (affectedObjects.Contains(health.gameObject))
         {
-            health.TakeDamage(damageAmount);
+            continue;
         }
+
+        // Add the health object to the affected objects list
+        affectedObjects.Add(health.gameObject);
+        // Apply damage to the health component
+        health.TakeDamage(damageAmount);
     }
+
+
 }
 
 
