@@ -47,19 +47,22 @@ public class BeatManager : MonoBehaviour
     }
 
     void SpawnBeat()
-    {
-        float canvasWidth = canvasRectTransform.rect.width;
-        Vector3 spawnPosition = new Vector3(canvasWidth / 2, -133, 0f);
+{
+     float canvasWidth = canvasRectTransform.rect.width;
+    Vector3 spawnPosition = new Vector3(canvasWidth / 2, -133, 0f);
 
-        GameObject beat = Instantiate(beatPrefab, spawnPosition, Quaternion.identity);
-        beat.transform.SetParent(ui);
-        beat.transform.localPosition = spawnPosition;
+    GameObject beat = Instantiate(beatPrefab, spawnPosition, Quaternion.identity);
+    beat.transform.SetParent(ui, false); // Set to false to prevent world position adjustments
 
-        beats.Add(beat);
+    // Reset local scale to avoid unintended size changes
+    beat.transform.localScale = Vector3.one / 3f;
 
-        BeatMovement beatMovement = beat.AddComponent<BeatMovement>();
-        beatMovement.Initialize(beatSpeed, canvasWidth, this, beat_sound); // Pass reference to BeatManager
-    }
+    beats.Add(beat);
+
+    BeatMovement beatMovement = beat.AddComponent<BeatMovement>();
+    beatMovement.Initialize(beatSpeed, canvasWidth, this, beat_sound, Time.time);
+}
+
 
     public void StartMusic()
     {
@@ -182,49 +185,57 @@ public class BeatMovement : MonoBehaviour
     private bool beat_triggered;
 
     public bool IsUsed { get; set; } = false; // Tracks whether the beat has been used
+    private float spawnTime; // Time when the beat was spawned
 
     void Start()
     {
         beatRectTransform = GetComponent<RectTransform>();
     }
 
-    public void Initialize(float moveSpeed, float width, BeatManager manager, AudioSource sound)
-    {
-        speed = moveSpeed;
-        canvasWidth = width;
-        beatManager = manager; // Assign reference to BeatManager
-        beat_sound = sound;
-    }
+    public void Initialize(float moveSpeed, float width, BeatManager manager, AudioSource sound, float correctedSpawnTime)
+{
+    speed = moveSpeed;
+    canvasWidth = width;
+    beatManager = manager;
+    beat_sound = sound;
+    spawnTime = correctedSpawnTime; // Use the corrected spawn time
+}
+
 
     void Update()
     {
-        beatRectTransform.anchoredPosition += Vector2.left * speed * Time.deltaTime;
+        // Calculate the position based on the time since spawn
+        float elapsedTime = Time.time - spawnTime;
+        float newXPosition = canvasWidth / 2 - speed * elapsedTime;
+        beatRectTransform.anchoredPosition = new Vector2(newXPosition, beatRectTransform.anchoredPosition.y);
 
-        // Start music when beat crosses x < 0 and music is not already playing
-        if (beatRectTransform.anchoredPosition.x <= 5 && !beatManager.IsMusicPlaying())
+        // Trigger music or sound logic when the beat crosses certain thresholds
+        if (newXPosition <= 5 && !beatManager.IsMusicPlaying())
         {
             beatManager.StartMusic();
-        } else if (beatRectTransform.anchoredPosition.x <= 5 && !beat_triggered) {
+        }
+        else if (newXPosition <= 5 && !beat_triggered)
+        {
             beat_triggered = true;
             beat_sound.Play();
         }
 
-        // Modify the fade-in logic: start fading in from 3/4 of the canvas width
-        if (beatRectTransform.anchoredPosition.x > 0f)
+        // Fade-in and fade-out logic
+        if (newXPosition > 0f)
         {
             float fadeInStart = canvasWidth * 0.35f; // 3/4 on the right
-            float fadeInFactor = Mathf.InverseLerp(fadeInStart, 0f, beatRectTransform.anchoredPosition.x);
+            float fadeInFactor = Mathf.InverseLerp(fadeInStart, 0f, newXPosition);
             SetAlpha(fadeInFactor);
         }
         else
         {
             float fadeOutStart = -canvasWidth * 0.35f; // 1/4 on the left
-            float fadeOutFactor = Mathf.InverseLerp(0f, fadeOutStart, beatRectTransform.anchoredPosition.x);
+            float fadeOutFactor = Mathf.InverseLerp(0f, fadeOutStart, newXPosition);
             SetAlpha(1 - fadeOutFactor); // Fade out as it moves past the left side
         }
 
         // Remove and destroy beat if it goes off-screen
-        if (beatRectTransform.anchoredPosition.x < -canvasWidth)
+        if (newXPosition < -canvasWidth)
         {
             beatManager.RemoveBeat(gameObject);
             Destroy(gameObject);
@@ -241,3 +252,4 @@ public class BeatMovement : MonoBehaviour
         }
     }
 }
+

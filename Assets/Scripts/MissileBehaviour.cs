@@ -130,15 +130,28 @@ public class HomingRigidbody : MonoBehaviour
 
     System.Collections.IEnumerator FadeOutAndDestroy()
     {
-        Transform capsuleChild = transform.Find("Capsule"); // Replace "Capsule" with the actual name of the child object
-        if (capsuleChild != null)
+        // Loop through all direct children of the current object
+        foreach (Transform child in transform)
+{
+    if (child.name == "Projectile") // Check if the child's name is "Projectile"
+    {
+        // Disable the Renderer
+        Renderer childRenderer = child.GetComponent<Renderer>();
+        if (childRenderer != null)
         {
-            Renderer capsuleRenderer = capsuleChild.GetComponent<Renderer>();
-            if (capsuleRenderer != null)
-            {
-                capsuleRenderer.enabled = false; // This hides the capsule
-            }
+            childRenderer.enabled = false; // This hides the child's renderer
         }
+
+        // Disable the Collider
+        Collider childCollider = child.GetComponent<Collider>();
+        if (childCollider != null)
+        {
+            childCollider.enabled = false; // This disables the child's collider
+        }
+    }
+}
+
+
 
         // Gradually fade out the trail effect
         if (trailEffect != null)
@@ -163,7 +176,18 @@ public class HomingRigidbody : MonoBehaviour
         }
 
         // Destroy the missile after the fade-out
-        Destroy(gameObject);
+        if (transform.parent != null) // Check if the GameObject has a parent
+        {
+            if (transform.parent.name == "VoidBlast") // Replace with the actual parent's name
+            {
+                Destroy(transform.parent.gameObject); // Destroy the parent GameObject
+            } else {
+                Destroy(gameObject);
+            }
+        } else {
+            Destroy(gameObject);
+        }
+        
     }
 
     void OnDrawGizmosSelected()

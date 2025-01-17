@@ -14,6 +14,7 @@ public class BossHealth : EnemyHealth
 
     private float targetHealthValue = 1f; // The target value for the slider (normalized)
     private bool isDead = false; // Flag to prevent redundant death logic
+    public Animator door;
 
     private void Start()
     {
@@ -78,6 +79,6 @@ public class BossHealth : EnemyHealth
             rb.useGravity = true;
         }
 
-        
+        door.SetTrigger("Open");
     }
 }
