@@ -4,7 +4,7 @@ public class Health : MonoBehaviour
 {
     public int health = 100; // Starting health
 
-    public virtual void TakeDamage(int damage)
+    public virtual void TakeDamage(int damage, bool cause)
     {
         health -= damage;
         // if (health <= 0)

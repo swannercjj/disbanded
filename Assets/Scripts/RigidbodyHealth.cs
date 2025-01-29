@@ -13,9 +13,9 @@ public class RigidbodyHealth : Health
         }
     }
 
-    public override void TakeDamage(int damage)
+    public override void TakeDamage(int damage, bool cause)
     {
-        base.TakeDamage(damage); // Call the base class's TakeDamage to reduce health
+        base.TakeDamage(damage, cause); // Call the base class's TakeDamage to reduce health
 
         if (rb != null)
         {

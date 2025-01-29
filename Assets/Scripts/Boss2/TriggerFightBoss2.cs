@@ -5,10 +5,11 @@ public class TriggerFightBoss2 : MonoBehaviour
     public GameObject boss;
     private bool triggered = false;
     public Animator door; 
+    public BeatManager manager;
 
-    private void OnTriggerEnter(Collider other)
+    private void OnTriggerStay(Collider other)
     {
-        if (triggered) {
+        if (triggered || this.enabled == false) {
             return;
         }
 
@@ -18,6 +19,7 @@ public class TriggerFightBoss2 : MonoBehaviour
         {
             triggered = true;
             door.SetTrigger("Close");
+            manager.PlayBossMusic();
             boss.GetComponent<ScriptManagerBoss2>().TriggerFight();
         }
     }

@@ -15,7 +15,7 @@ public class ScriptManagerBoss2 : MonoBehaviour
     private float lerpTimer = 0f; // Timer for lerping
     private Transform targetPosition; // The position and rotation the enemy is lerping to
     private bool hasStartedAttack = false; // Flag to check if the attack has already started
-    private string state = "passive"; // Current state of the boss
+    public string state = "passive"; // Current state of the boss
 
     [SerializeField] public GameObject boss_health_bar; // Reference to the health bar slider
     public Health bossHealth; // Reference to the boss health script

@@ -123,7 +123,7 @@ public class StraightProjectile : MonoBehaviour
         // Add the health object to the affected objects list
         affectedObjects.Add(health.gameObject);
         // Apply damage to the health component
-        health.TakeDamage(damageAmount);
+        health.TakeDamage(damageAmount, true);
     }
 
 

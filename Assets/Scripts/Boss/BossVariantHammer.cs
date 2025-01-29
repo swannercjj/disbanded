@@ -13,7 +13,7 @@ public class BossVariantHammerEnemy : MonoBehaviour
     public int maxDebrisCount = 10; // Maximum number of debris
     public float minDebrisForce = 5f; // Minimum force for debris
     public float maxDebrisForce = 10f; // Maximum force for debris
-
+public float rotationSpeed = 5f; // Speed of rotation to face the player
     private Rigidbody rb;
     private float jumpTimer;
     private Health health;
@@ -49,7 +49,7 @@ public class BossVariantHammerEnemy : MonoBehaviour
 
         // Check if the player is within range
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
-
+        RotateToFacePlayer(playerTransform);
         // If the player is within detection range, check if the enemy can see them
         if (distanceToPlayer <= detectionRange)
         {
@@ -77,7 +77,25 @@ public class BossVariantHammerEnemy : MonoBehaviour
             jumpTimer -= Time.deltaTime;
         }
     }
+    void RotateToFacePlayer(Transform playerTransform)
+    {
+        // Calculate direction to the player
+        Vector3 directionToPlayer = playerTransform.position - transform.position;
+        directionToPlayer.y = 0; // Ignore vertical difference for rotation
 
+        if (directionToPlayer != Vector3.zero)
+        {
+            // Calculate the target rotation
+            Quaternion targetRotation = Quaternion.LookRotation(directionToPlayer);
+
+            // Smoothly interpolate towards the target rotation
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                targetRotation,
+                Time.deltaTime * rotationSpeed
+            );
+        }
+    }
     bool CanSeePlayer(Transform playerTransform)
     {
         // Cast a ray from the enemy to the player

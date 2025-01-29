@@ -32,7 +32,7 @@ public class Laser : MonoBehaviour
     private void ApplyDamage(Health health)
     {
         // Apply damage (convert to int)
-        health.TakeDamage(damageAmount); // damageAmount is already an int
+        health.TakeDamage(damageAmount, false); // damageAmount is already an int
     }
 
     private void OnDrawGizmos()

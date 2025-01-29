@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Collections;
 using UnityEngine.VFX;
 
 
@@ -17,7 +18,7 @@ public class HomingRigidbody : MonoBehaviour
     public int damageAmount = 50; // Damage to apply within the explosion radius
     public VisualEffect trailEffect; // The trail effect Visual Effect Graph
     public float trailFadeDuration = 2f; // Duration for the trail effect to fade out
-
+    public float startDelay = 0f;
     private Rigidbody rb;
     private float elapsedTime = 0f;
     private bool hasExploded = false; // Flag to track if the missile has exploded
@@ -31,8 +32,21 @@ public class HomingRigidbody : MonoBehaviour
             Debug.LogError("Rigidbody component is missing from the object!");
         }
 
+        // Start the delayed movement behavior
+        StartCoroutine(DelayedStart());
+    }
+
+    // Coroutine to handle the delay before starting missile movement
+    IEnumerator DelayedStart()
+    {
+        // Wait for the specified delay time
+        yield return new WaitForSeconds(startDelay);
+
         // Initial movement
-        rb.linearVelocity = transform.forward * speed;
+        if (!rb.isKinematic) {
+            rb.linearVelocity = transform.forward * speed;
+        }
+        
     }
 
     void FixedUpdate()
@@ -115,7 +129,7 @@ public class HomingRigidbody : MonoBehaviour
             if (health != null)
             {
                 // Only apply damage if the object has a Health component
-                health.TakeDamage(damageAmount);
+                health.TakeDamage(damageAmount, false);
             }
 
             // Apply explosion force if the object has a Rigidbody

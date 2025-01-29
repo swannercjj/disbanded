@@ -12,7 +12,7 @@ public class DamageOnTouch : MonoBehaviour
         if (targetHealth != null)
         {
             // Deal damage to the target
-            targetHealth.TakeDamage(damageAmount);
+            targetHealth.TakeDamage(damageAmount, false);
         }
     }
 }

@@ -8,7 +8,7 @@ public class PlayerShoot : MonoBehaviour
     public Camera playerCamera; // Reference to the player's camera
 
     private BeatManager beatManager; // Reference to the BeatManager
-
+    public bool frozen = false;
     void Start()
     {
         if (canvas != null)
@@ -34,7 +34,7 @@ public class PlayerShoot : MonoBehaviour
     void Update()
     {
         // Check if the player presses the fire button (left mouse button)
-        if (Input.GetMouseButtonDown(0)) // Left-click for shooting
+        if (Input.GetMouseButtonDown(0) && !frozen) // Left-click for shooting
         {
             // Check if there is a beat in the middle before shooting
             GameObject beatInMiddle = beatManager.GetBeatInMiddle();
@@ -47,43 +47,49 @@ public class PlayerShoot : MonoBehaviour
     }
 
     void Shoot()
+{
+    // Ensure the firePoint and bulletPrefab are assigned
+    if (bulletPrefab == null || firePoint == null)
     {
-        // Ensure the firePoint and bulletPrefab are assigned
-        if (bulletPrefab == null || firePoint == null)
-        {
-            Debug.LogError("Bullet prefab or fire point is missing.");
-            return;
-        }
-
-        if (playerCamera == null)
-        {
-            Debug.LogError("Player camera is not set.");
-            return;
-        }
-
-        // Calculate the direction from the firePoint to the mouse position
-        Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
-        if (Physics.Raycast(ray, out RaycastHit hit))
-        {
-            Vector3 targetDirection = (hit.point - firePoint.position).normalized;
-
-            // Rotate the firePoint to face the target direction
-            Quaternion rotation = Quaternion.LookRotation(targetDirection);
-            firePoint.rotation = rotation;
-
-            // Instantiate the bullet at the firePoint's position and orientation
-            GameObject bullet = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
-
-            // Set the player as the shooter for the bullet
-            StraightProjectile bulletScript = bullet.GetComponent<StraightProjectile>();
-            if (bulletScript != null)
-            {
-                bulletScript.shooter = gameObject; // Use gameObject to refer to the player
-            }
-        }
-        else
-        {
-            Debug.Log("Mouse raycast did not hit any object.");
-        }
+        Debug.LogError("Bullet prefab or fire point is missing.");
+        return;
     }
+
+    if (playerCamera == null)
+    {
+        Debug.LogError("Player camera is not set.");
+        return;
+    }
+
+    // Calculate the direction from the firePoint to the mouse position
+    Ray ray = playerCamera.ScreenPointToRay(Input.mousePosition);
+    Vector3 targetDirection;
+
+    if (Physics.Raycast(ray, out RaycastHit hit))
+    {
+        // If the raycast hits an object, aim at the hit point
+        targetDirection = (hit.point - firePoint.position).normalized;
+    }
+    else
+    {
+        // If no object is hit, fire in the direction the camera is facing
+        Vector3 defaultPoint = ray.GetPoint(1000); // 1000 units away from the camera
+        targetDirection = (defaultPoint - firePoint.position).normalized;
+    }
+
+    // Rotate the firePoint to face the target direction
+    Quaternion rotation = Quaternion.LookRotation(targetDirection);
+    firePoint.rotation = rotation;
+
+    // Instantiate the bullet at the firePoint's position and orientation
+    GameObject bullet = Instantiate(bulletPrefab, firePoint.position, firePoint.rotation);
+
+    // Set the player as the shooter for the bullet
+    StraightProjectile bulletScript = bullet.GetComponent<StraightProjectile>();
+    if (bulletScript != null)
+    {
+        bulletScript.shooter = gameObject; // Use gameObject to refer to the player
+    }
+}
+
 }

@@ -13,6 +13,7 @@ public class HammerEnemy : MonoBehaviour
     public int maxDebrisCount = 10; // Maximum number of debris
     public float minDebrisForce = 5f; // Minimum force for debris
     public float maxDebrisForce = 10f; // Maximum force for debris
+    public float rotationSpeed = 5f; // Speed of rotation to face the player
 
     private Rigidbody rb;
     private float jumpTimer;
@@ -47,6 +48,9 @@ public class HammerEnemy : MonoBehaviour
 
         Transform playerTransform = PlayerController.player.transform;
 
+        // Constantly rotate to face the player
+        RotateToFacePlayer(playerTransform);
+
         // Check if the player is within range
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
@@ -59,7 +63,6 @@ public class HammerEnemy : MonoBehaviour
                 // If the enemy can see the player, start the jump action
                 if (jumpTimer <= 0f)
                 {
-                    FacePlayer(playerTransform);
                     LeapAtPlayer(playerTransform);
                     jumpTimer = jumpInterval; // Reset the jump timer
                 }
@@ -98,17 +101,23 @@ public class HammerEnemy : MonoBehaviour
         return false;
     }
 
-    void FacePlayer(Transform playerTransform)
+    void RotateToFacePlayer(Transform playerTransform)
     {
         // Calculate direction to the player
-        Vector3 directionToPlayer = (playerTransform.position - transform.position).normalized;
+        Vector3 directionToPlayer = playerTransform.position - transform.position;
         directionToPlayer.y = 0; // Ignore vertical difference for rotation
 
-        // Rotate the enemy to face the player
         if (directionToPlayer != Vector3.zero)
         {
-            Quaternion lookRotation = Quaternion.LookRotation(directionToPlayer);
-            transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * 10f);
+            // Calculate the target rotation
+            Quaternion targetRotation = Quaternion.LookRotation(directionToPlayer);
+
+            // Smoothly interpolate towards the target rotation
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                targetRotation,
+                Time.deltaTime * rotationSpeed
+            );
         }
     }
 
@@ -175,27 +184,19 @@ public class HammerEnemy : MonoBehaviour
                 float angle = i * (360f / debrisCount); // Evenly spaced angles
                 Vector3 horizontalDirection = Quaternion.Euler(0f, angle, 0f) * Vector3.forward;
 
-                // Randomize the vertical angle between 80 and 90 degrees
-                float verticalAngle = Random.Range(0f, 30f); // Vertical range between 80 and 90 degrees
-                float verticalMagnitude = Mathf.Sin(Mathf.Deg2Rad * verticalAngle); // Vertical magnitude based on the sine of the angle
-                float horizontalMagnitude = Mathf.Cos(Mathf.Deg2Rad * verticalAngle); // Horizontal magnitude (remains part of the circle)
+                // Randomize the vertical angle
+                float verticalAngle = Random.Range(0f, 30f); 
+                float verticalMagnitude = Mathf.Sin(Mathf.Deg2Rad * verticalAngle);
+                float horizontalMagnitude = Mathf.Cos(Mathf.Deg2Rad * verticalAngle);
 
-                // Apply the vertical component and keep the horizontal spread
                 Vector3 direction = new Vector3(horizontalDirection.x * horizontalMagnitude, verticalMagnitude, horizontalDirection.z * horizontalMagnitude);
 
-                // Apply random force
                 float force = Random.Range(minDebrisForce, maxDebrisForce);
                 debrisRb.AddForce(direction * force, ForceMode.Impulse);
 
-                // Rotate the debris to face the direction it is being tossed
                 debris.transform.rotation = Quaternion.LookRotation(direction);
 
-                // Apply random spin
-                Vector3 randomSpin = new Vector3(
-                    Random.Range(-30f, 30f),
-                    Random.Range(-30f, 30f),
-                    Random.Range(-30f, 30f)
-                );
+                Vector3 randomSpin = new Vector3(Random.Range(-30f, 30f), Random.Range(-30f, 30f), Random.Range(-30f, 30f));
                 debrisRb.AddTorque(randomSpin, ForceMode.Impulse);
             }
         }
@@ -203,7 +204,6 @@ public class HammerEnemy : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        // Visualize detection range in the editor
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
     }

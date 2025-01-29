@@ -33,11 +33,11 @@ public class PlayerHealth : Health
         }
     }
 
-    public override void TakeDamage(int damage)
+    public override void TakeDamage(int damage, bool cause)
     {
         if (isDead) return; // Prevent further actions if already dead
 
-        base.TakeDamage(damage);
+        base.TakeDamage(damage, cause);
 
         currentHealth -= damage; // Decrease current health
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHP); // Ensure health doesn't go below 0
@@ -173,7 +173,7 @@ public class PlayerHealth : Health
         // If the player is dead and the "R" key is pressed, reload the scene
         if (isDead && Input.GetKeyDown(KeyCode.R))
         {
-            ReloadScene();
+            GameManager.Instance.LoadCheckpoint();
         }
     }
 

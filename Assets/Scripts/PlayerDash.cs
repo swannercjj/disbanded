@@ -20,6 +20,7 @@ public class PlayerDash : MonoBehaviour
     private float trailEffectTimeRemaining;
     private VisualEffect vfx;
     private Coroutine fadeOutCoroutine; // To keep track of the fade-out coroutine
+    public bool frozen;
 
     void Start()
     {
@@ -92,6 +93,10 @@ public class PlayerDash : MonoBehaviour
 
     private void StartDash()
 {
+    if (frozen) {
+        return;
+    }
+
     Vector3 inputDirection = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
 
     if (inputDirection.magnitude > 0.1f)

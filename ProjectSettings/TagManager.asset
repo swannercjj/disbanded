@@ -3,7 +3,10 @@
 --- !u!78 &1
 TagManager:
   serializedVersion: 3
-  tags: []
+  tags:
+  - Pillar
+  - Pillar3
+  - Pillar2
   layers:
   - Default
   - TransparentFX
@@ -17,7 +20,7 @@ TagManager:
   - Debris
   - Player
   - Crate
-  - 
+  - Weakpoint
   - 
   - 
   - 

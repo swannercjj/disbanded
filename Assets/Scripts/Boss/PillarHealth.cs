@@ -9,12 +9,15 @@ public class PillarHealth : Health
     {
         // Cache the Renderer component
         objectRenderer = GetComponent<Renderer>();
-        health = 200;
     }
 
-    public override void TakeDamage(int damage)
+    public override void TakeDamage(int damage, bool cause)
     {
-        base.TakeDamage(damage); // Call the base class implementation
+        if (!cause) {
+            return;
+        }
+
+        base.TakeDamage(damage, cause); // Call the base class implementation
 
         if (health <= 0)
         {
@@ -38,6 +41,8 @@ public class PillarHealth : Health
         if (BossStateManager.Instance != null)
         {
             BossStateManager.Instance.NotifyPillarDestroyed();
+        } else if (BossStateManager3.Instance != null) {
+            BossStateManager3.Instance.IncrementCrystalsDestroyed();
         }
         else
         {

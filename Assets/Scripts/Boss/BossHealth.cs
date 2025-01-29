@@ -29,11 +29,15 @@ public class BossHealth : EnemyHealth
         UpdateBossImageColor(); // Set initial color based on vulnerability state
     }
 
-    public override void TakeDamage(int damage)
+    public override void TakeDamage(int damage, bool cause)
     {
+        if (!cause) {
+            return;
+        }
+
         if (BossStateManager.Instance.IsVulnerable && !isDead)
         {
-            base.TakeDamage(damage); // Apply damage
+            base.TakeDamage(damage, cause); // Apply damage
             CurrentHealth = health;
 
             // Update the target slider value
@@ -79,6 +83,6 @@ public class BossHealth : EnemyHealth
             rb.useGravity = true;
         }
 
-        door.SetTrigger("Open");
+        door.SetTrigger("PlayAnimation");
     }
 }

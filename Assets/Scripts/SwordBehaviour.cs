@@ -79,7 +79,7 @@ public class HomingSwordRigidbody : MonoBehaviour
         Health health = collision.gameObject.GetComponent<Health>();
         if (health != null)
         {
-            health.TakeDamage(damageAmount);
+            health.TakeDamage(damageAmount, false);
         }
 
         // Start destruction sequence

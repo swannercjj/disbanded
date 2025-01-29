@@ -12,6 +12,7 @@ public class PlayerController : MonoBehaviour
     private Camera playerCamera;
     private float xRotation = 0f; // To limit vertical rotation
     private bool isGrounded;
+    public bool frozen = false;
 
     private Vector3 targetVelocity;
 
@@ -47,6 +48,10 @@ public class PlayerController : MonoBehaviour
         xRotation -= mouseY;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
         playerCamera.transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
+
+        if (frozen){
+            return;
+        }
 
         // Handle movement input
         float horizontalInput = Input.GetAxisRaw("Horizontal"); // A/D or Left/Right Arrow keys

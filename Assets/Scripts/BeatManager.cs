@@ -1,10 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
-
+using System.Collections;
 public class BeatManager : MonoBehaviour
 {
     public GameObject beatPrefab;                // Prefab of the beat
+    public GameObject parentPrefab;
     public RectTransform canvasRectTransform;    // Reference to the RectTransform of the canvas
     public Transform ui;                         // Parent for spawned beats
     public float bpm = 50f;                      // Beats per minute
@@ -12,11 +13,13 @@ public class BeatManager : MonoBehaviour
     public AudioSource beat_sound;
 
     public AudioSource musicSource;             // AudioSource for playing the music
-
+    public AudioSource bossMusic; 
+    public float fadeDuration;
     private float timeBetweenBeats;              // Time between spawns
     private float timeSinceLastSpawn;            // Timer for next spawn
     private List<GameObject> beats;              // List to keep track of spawned beats
     private bool isMusicPlaying = false;         // Tracks whether music is currently playing
+    private string music_to_play = "passive";
 
     void Start()
     {
@@ -48,11 +51,13 @@ public class BeatManager : MonoBehaviour
 
     void SpawnBeat()
 {
-     float canvasWidth = canvasRectTransform.rect.width;
+    float canvasWidth = canvasRectTransform.rect.width;
     Vector3 spawnPosition = new Vector3(canvasWidth / 2, -133, 0f);
 
     GameObject beat = Instantiate(beatPrefab, spawnPosition, Quaternion.identity);
-    beat.transform.SetParent(ui, false); // Set to false to prevent world position adjustments
+
+    // Set the parent to the provided prefab's transform
+    beat.transform.SetParent(parentPrefab.transform, false); // Set to false to prevent world position adjustments
 
     // Reset local scale to avoid unintended size changes
     beat.transform.localScale = Vector3.one / 3f;
@@ -64,14 +69,82 @@ public class BeatManager : MonoBehaviour
 }
 
 
-    public void StartMusic()
+    public void PlayBossMusic()
+{
+    music_to_play = "boss";
+    isMusicPlaying = false;
+}
+
+public void StartMusic()
+{
+    if (!isMusicPlaying)
     {
-        if (!isMusicPlaying && musicSource != null)
+        AudioSource musicToPlay = null;
+
+        // Select the appropriate music to play
+        if (music_to_play == "boss" && bossMusic != null)
         {
-            musicSource.Play();
-            isMusicPlaying = true;
+            musicToPlay = bossMusic;
+        }
+        else if (musicSource != null)
+        {
+            musicToPlay = musicSource;
+        }
+
+        if (musicToPlay != null)
+        {
+            StartCoroutine(SwitchMusic(musicToPlay)); // Handle music switching with fading
         }
     }
+}
+
+private IEnumerator SwitchMusic(AudioSource newMusic)
+{
+    isMusicPlaying = true;
+
+    // Fade out currently playing music (if any)
+    if (musicSource != null && musicSource.isPlaying)
+    {
+        yield return StartCoroutine(FadeOutMusic(musicSource));
+        musicSource.Stop();
+    }
+
+    // Fade in the new music
+    yield return StartCoroutine(FadeInMusic(newMusic));
+    musicSource = newMusic; // Update the current music source to the new music
+}
+
+private IEnumerator FadeInMusic(AudioSource music)
+{
+    float startVolume = music.volume;
+    music.volume = 0; // Start with 0 volume
+    music.Play(); // Start playing the new music
+
+    // Gradually increase volume over the fade duration
+    for (float t = 0; t < fadeDuration; t += Time.deltaTime)
+    {
+        music.volume = Mathf.Lerp(0, startVolume, t / fadeDuration);
+        yield return null;
+    }
+
+    music.volume = startVolume; // Ensure the volume is fully restored
+}
+
+private IEnumerator FadeOutMusic(AudioSource music)
+{
+    float startVolume = music.volume;
+
+    // Gradually reduce volume over the fade duration
+    for (float t = 0; t < fadeDuration; t += Time.deltaTime)
+    {
+        music.volume = Mathf.Lerp(startVolume, 0, t / fadeDuration);
+        yield return null;
+    }
+
+    music.volume = 0; // Ensure the volume is completely off
+}
+
+
 
     public bool IsMusicPlaying()
     {

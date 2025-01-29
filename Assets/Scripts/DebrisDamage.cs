@@ -6,6 +6,10 @@ public class DebrisDamage : MonoBehaviour
     private bool hasDamagedPlayer = false; // Flag to prevent multiple damage
 
     // This is triggered when the debris collides with something
+    void Start() {
+        Destroy(gameObject, 3f);
+    }
+
     void OnCollisionEnter(Collision collision)
     {
         // Check if the object collided with is the player (assuming PlayerController has a tag "Player")
@@ -20,14 +24,13 @@ public class DebrisDamage : MonoBehaviour
                 // If the player has a Health component, deal damage
                 if (playerHealth != null)
                 {
-                    playerHealth.TakeDamage(damage);
+                    playerHealth.TakeDamage(damage, false);
                 }
 
                 // Set the flag to prevent further damage from the same debris object
                 hasDamagedPlayer = true;
                 
                 // Destroy the debris after 3 seconds
-                Destroy(gameObject, 3f);
             }
         }
     }
