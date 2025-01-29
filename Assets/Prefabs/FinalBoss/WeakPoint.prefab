@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 8924144575522123723}
   - component: {fileID: 8107291474328622673}
   - component: {fileID: 9078396067084656284}
-  m_Layer: 0
+  m_Layer: 12
   m_Name: WeakPoint
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -165,4 +165,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   health: 100
   explosionEffect: {fileID: 911777543720715900, guid: bc3f47d1dd2fd844d86b85173d543828, type: 3}
-  health_set: 100

@@ -32,7 +32,5 @@ public class FreezeRigidbody : MonoBehaviour
 
         // Freeze the Rigidbody by setting it to kinematic
         rb.isKinematic = true;
-
-        Debug.Log("Rigidbody has been frozen.");
     }
 }
