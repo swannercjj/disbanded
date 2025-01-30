@@ -292,7 +292,7 @@ MonoBehaviour:
   explosionEffect: {fileID: 911777543720715900, guid: 74a0e2d39225f164da31b0ed6b3d865b, type: 3}
   explosionRadius: 5
   explosionForce: 500
-  damageAmount: 70
+  damageAmount: 40
   trailEffect: {fileID: 4624913789577169807}
   trailFadeDuration: 2
   startDelay: 0

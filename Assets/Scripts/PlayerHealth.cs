@@ -26,6 +26,7 @@ public class PlayerHealth : Health
     private void Start()
     {
         // Initialize the player's health
+        maxHP = PlayerPrefs.GetInt("PlayerMaxHealth", 100);
         currentHealth = maxHP;
         if (healthBarImage != null)
         {

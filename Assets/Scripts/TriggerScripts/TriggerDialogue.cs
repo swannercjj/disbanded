@@ -1,17 +1,36 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Collections;
+
 public class TriggerDialogue : MonoBehaviour
 {
     public DialogueBox dialogueBox; // Reference to the DialogueBox script
     public List<string> dialogueTexts; // List of dialogue strings
     public string characterName; // The name of the character
     public GameObject beats;
+    public bool trigger_once = false; // If true, the dialogue triggers only once
+
     private int dialogueIndex = 0; // Tracks the current dialogue index
     private bool playerInRange = false; // Tracks if the player is in range
     private bool hasTriggered = false; // Tracks if the dialogue has already been triggered
     private GameObject player;
+    private string trigger_key; // Unique key for saving trigger state
 
+    // Static HashSet to store triggers that have been activated in the current session
+    private static HashSet<string> triggeredInSession = new HashSet<string>();
+
+    private void Start()
+    {
+        // Generate a unique key for this trigger using its name and position
+        trigger_key = gameObject.name + "_" + transform.position.ToString();
+
+        // Check if the trigger has been activated in the current session
+        if (trigger_once && triggeredInSession.Contains(trigger_key))
+        {
+            hasTriggered = true;
+            gameObject.SetActive(false); // Disable the trigger for this session
+        }
+    }
 
     private void OnTriggerStay(Collider other)
     {
@@ -21,6 +40,12 @@ public class TriggerDialogue : MonoBehaviour
             playerInRange = true;
             hasTriggered = true; // Mark as triggered
             player = other.gameObject;
+
+            if (trigger_once)
+            {
+                triggeredInSession.Add(trigger_key); // Store it in the session-only HashSet
+            }
+
             StartCoroutine(WaitAndEnable());
         }
     }
@@ -36,10 +61,12 @@ public class TriggerDialogue : MonoBehaviour
             rb.linearVelocity = Vector3.zero; // Set velocity to zero
             rb.angularVelocity = Vector3.zero; // Stop rotational movement
         }
+
         player.GetComponent<PlayerController>().frozen = true;
         player.GetComponent<PlayerDash>().frozen = true;
         player.GetComponent<PlayerShoot>().frozen = true;
         beats.SetActive(false);
+
         // Start the dialogue
         if (dialogueTexts.Count > 0)
         {
@@ -47,18 +74,6 @@ public class TriggerDialogue : MonoBehaviour
             dialogueBox.Say(characterName, dialogueTexts[dialogueIndex]);
         }
     }
-
-    // private void OnTriggerExit(Collider other)
-    // {
-    //     // Check if the object exiting the trigger has the PlayerController tag
-    //     if (other.CompareTag("Player"))
-    //     {
-    //         playerInRange = false;
-
-    //         // Close the dialogue when the player leaves
-    //         dialogueBox.Hide();
-    //     }
-    // }
 
     private void EnableAllParentScripts()
     {
@@ -100,7 +115,9 @@ public class TriggerDialogue : MonoBehaviour
                 player.GetComponent<PlayerShoot>().frozen = false;
                 beats.SetActive(true);
                 EnableAllParentScripts();
-                Destroy(this);
+
+                    Destroy(this); // Destroy the script after use if trigger_once is false
+
             }
         }
     }

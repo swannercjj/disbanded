@@ -13,11 +13,15 @@ public class PlayerController : MonoBehaviour
     private float xRotation = 0f; // To limit vertical rotation
     private bool isGrounded;
     public bool frozen = false;
+    public bool super_froze = false;
+    public int is_inverted;
+
 
     private Vector3 targetVelocity;
 
     void Start()
     {
+        is_inverted = PlayerPrefs.GetInt("MouseInverted", 1);
         player = this.gameObject;
         rb = GetComponent<Rigidbody>();
         playerCamera = GetComponentInChildren<Camera>();
@@ -37,9 +41,13 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        if (super_froze){
+            return;
+        }
+
         // Handle mouse look
         float mouseX = Input.GetAxisRaw("Mouse X") * mouseSensitivity;
-        float mouseY = Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
+        float mouseY = is_inverted*Input.GetAxisRaw("Mouse Y") * mouseSensitivity;
 
         // Rotate the player horizontally
         transform.Rotate(Vector3.up * mouseX);
