@@ -6,6 +6,7 @@ public class PlayerShoot : MonoBehaviour
     public Transform firePoint; // The point from which bullets are fired
     public Canvas canvas; // Reference to the Canvas (which contains the BeatManager)
     public Camera playerCamera; // Reference to the player's camera
+    public Animator animator;
 
     private BeatManager beatManager; // Reference to the BeatManager
     public bool frozen = false;
@@ -44,6 +45,7 @@ public class PlayerShoot : MonoBehaviour
                 Shoot();
             }
         }
+        else { animator.SetBool("IsShooting", false); }
     }
 
     void Shoot()
@@ -88,6 +90,8 @@ public class PlayerShoot : MonoBehaviour
     StraightProjectile bulletScript = bullet.GetComponent<StraightProjectile>();
     if (bulletScript != null)
     {
+        animator.SetBool("IsShooting", true);
+        Debug.Log(animator.GetBool("IsShooting"));
         bulletScript.shooter = gameObject; // Use gameObject to refer to the player
     }
 }
